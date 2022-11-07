@@ -1,0 +1,417 @@
+---
+title: "Matt's Logistic Regression"
+output: html_notebook
+---
+
+```{r}
+df_combined <- read.csv("train.csv", header=TRUE)
+View(df_combined)
+```
+
+```{r}
+df_both <- read.csv("both.csv", header=TRUE)
+plot(df_both$Year.Drafted, df_both$X3P.)
+```
+
+
+```{r}
+fit_combined <- glm(target_5yrs ~ . -Name -Year.Drafted, family="binomial", data=df_combined)
+summary(fit_combined)
+```
+
+```{r}
+library(dplyr)
+df_combined$prediction <- predict(fit_combined, df_combined, type="response")
+df_combined <- df_combined %>% mutate(prediction = 1*(prediction > .5)+0)
+df_combined <- df_combined %>% mutate(accuracy = 1*(prediction == target_5yrs))
+```
+
+```{r}
+sum(df_combined$accuracy)/nrow(df_combined)
+```
+```{r}
+plot(predict(fit_combined), residuals(fit_combined), col=c("red", "blue")[1+df_combined$target_5yrs])
+lines(lowess(predict(fit_combined),residuals(fit_combined)),col="black",lwd=2)
+```
+```{r}
+library(pROC)
+prob = predict(fit_combined, type = "response")
+test_roc = roc(df_combined$target_5yrs ~ prob, plot = TRUE, print.auc = TRUE)
+```
+```{r}
+library(caret)
+confusionMatrix(data = as.factor(df_combined$prediction), reference = as.factor(df_combined$target_5yrs))
+```
+```{r}
+cor <- round(cov2cor(vcov(fit_combined)), 2)
+cor
+```
+```{r}
+heatmap(cor)
+```
+
+
+```{r}
+small_fit <- glm(target_5yrs ~ GP + MIN + FG. + X3P. + AST + BLK + TOV, family="binomial", data=df_combined)
+summary(small_fit)
+```
+
+```{r}
+df_combined$prediction <- predict(small_fit, df_combined, type="response")
+df_combined <- df_combined %>% mutate(prediction = 1*(prediction > .5)+0)
+df_combined <- df_combined %>% mutate(accuracy = 1*(prediction == target_5yrs))
+sum(df_combined$accuracy)/nrow(df_combined)
+```
+
+```{r}
+library(caret)
+confusionMatrix(data = as.factor(df_combined$prediction), reference = as.factor(df_combined$target_5yrs))
+```
+
+
+```{r}
+plot(predict(small_fit), residuals(small_fit), col=c("red", "blue")[1+df_combined$target_5yrs])
+lines(lowess(predict(small_fit),residuals(small_fit)),col="black",lwd=2)
+```
+```{r}
+library(pROC)
+prob = predict(small_fit, type = "response")
+test_roc = roc(df_combined$target_5yrs ~ prob, plot = TRUE, print.auc = TRUE)
+```
+
+```{r}
+cor <- round(cov2cor(vcov(new_fit)), 2)
+cor
+```
+
+```{r}
+heatmap(cor)
+```
+
+```{r}
+Y = df_combined$target_5yrs
+plot(df_combined$GP,residuals(small_fit),col=c("blue","red")[1+Y])
+lines(lowess(df_combined$GP,residuals(small_fit)),col="black",lwd=2)
+lines(lowess(df_combined$GP[Y==0],residuals(small_fit)[Y==0]),col="blue")
+lines(lowess(df_combined$GP[Y==1],residuals(small_fit)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_combined$MIN
+plot(df_combined$MIN,residuals(small_fit),col=c("blue","red")[1+Y])
+lines(lowess(df_combined$MIN,residuals(small_fit)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(small_fit)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(small_fit)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+
+```{r}
+X = df_combined$AST
+plot(df_combined$AST,residuals(small_fit),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(small_fit)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(small_fit)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(small_fit)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_combined$BLK
+plot(df_combined$BLK,residuals(small_fit),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(small_fit)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(small_fit)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(small_fit)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_combined$TOV
+plot(df_combined$TOV,residuals(small_fit),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(small_fit)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(small_fit)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(small_fit)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_combined$FG.
+plot(df_combined$FG.,residuals(small_fit),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(small_fit)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(small_fit)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(small_fit)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_combined$X3P.
+plot(df_combined$X3P.,residuals(small_fit),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(small_fit)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(small_fit)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(small_fit)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+small_fit <- glm(target_5yrs ~ GP + MIN + FG. + X3P. + AST + BLK + TOV, family="binomial", data=df_combined)
+```{r}
+mod_fit <- glm(target_5yrs ~ GP + MIN + I(FG.*FG.) + log(X3P.+.001) + AST + log(1+BLK) + REB + FT. , family="binomial", data=df_combined)
+summary(mod_fit)
+```
+```{r}
+df_combined$prediction <- predict(mod_fit, df_combined, type="response")
+df_combined <- df_combined %>% mutate(prediction = 1*(prediction > .5)+0)
+df_combined <- df_combined %>% mutate(accuracy = 1*(prediction == target_5yrs))
+sum(df_combined$accuracy)/nrow(df_combined)
+```
+
+```{r}
+library(ggplot2)
+ggplot(df_combined, aes(prediction, color = as.factor(target_5yrs) ) ) + 
+geom_density( size = 1 )
+```
+```{r}
+prob = predict(mod_fit, type = "response")
+test_roc = roc(df_combined$target_5yrs ~ prob, plot = TRUE, print.auc = TRUE)
+```
+
+```{r}
+library(caret)
+confusionMatrix(data = as.factor(df_combined$prediction), reference = as.factor(df_combined$target_5yrs))
+```
+
+```{r}
+cor <- round(cov2cor(vcov(mod_fit)), 2)
+cor
+```
+
+
+
+
+```{r}
+df_remove_3p <- df_combined[!(df_combined$X3P. == 1 | df_combined$X3P. == 0),]
+removed_fit <- glm(target_5yrs ~ GP + MIN + FG. + log(1+X3P.Made) + log(1+BLK) + REB + FT., family="binomial", data=df_remove_3p)
+summary(removed_fit)
+```
+```{r}
+df_combined$prediction <- predict(removed_fit, df_combined, type="response")
+df_combined <- df_combined %>% mutate(prediction = 1*(prediction > .5)+0)
+df_combined <- df_combined %>% mutate(accuracy = 1*(prediction == target_5yrs))
+sum(df_combined$accuracy)/nrow(df_combined)
+```
+```{r}
+sum(df_combined$target_5yrs)/nrow(df_combined)
+```
+
+
+
+
+```{r}
+df_min <- read.csv("per_min.csv", header=TRUE)
+fit_min <- glm(target_5yrs ~ . -Name -Year.Drafted, family="binomial", data=df_min)
+summary(fit_min)
+```
+```{r}
+df_min$prediction <- predict(fit_min, df_min, type="response")
+df_min <- df_min %>% mutate(prediction = 1*(prediction > .5)+0)
+df_min <- df_min %>% mutate(accuracy = 1*(prediction == target_5yrs))
+sum(df_min$accuracy)/nrow(df_min)
+```
+```{r}
+plot(predict(fit_min), residuals(fit_min), col=c("red", "blue")[1+df_min$target_5yrs])
+lines(lowess(predict(fit_min),residuals(fit_min)),col="black",lwd=2)
+```
+
+```{r}
+prob = predict(fit_min, type = "response")
+test_roc = roc(df_min$target_5yrs ~ prob, plot = TRUE, print.auc = TRUE)
+```
+```{r}
+confusionMatrix(data = as.factor(df_min$prediction), reference = as.factor(df_min$target_5yrs))
+```
+
+```{r}
+cor <- round(cov2cor(vcov(fit_min)), 2)
+cor
+```
+
+```{r}
+Y = df_min$target_5yrs
+X = df_min$GP
+plot(df_min$GP,residuals(fit_min),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+
+```{r}
+X = df_min$PTS
+plot(df_min$PTS,residuals(fit_min),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_min$MIN
+plot(df_min$MIN,residuals(fit_min),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_min$FTA
+plot(df_min$FTA,residuals(fit_min),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_min$FG.
+plot(df_min$FG.,residuals(fit_min),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+
+```{r}
+X = df_min$X3P.
+plot(df_min$X3P.,residuals(fit_min),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_min$AST
+plot(df_min$AST,residuals(fit_min),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+
+```{r}
+X = df_min$BLK
+plot(df_min$BLK,residuals(fit_min),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+
+```{r}
+X = df_min$REB
+plot(df_min$REB,residuals(fit_min),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+
+```{r}
+fit_min2 <- glm(target_5yrs ~ GP + PTS + MIN + log(.01 + X3P.) + FT. + FTA + FG. + AST + log(.01 + BLK), family="binomial", data=df_min)
+summary(fit_min2)
+```
+
+```{r}
+df_min$prediction <- predict(fit_min2, df_min, type="response")
+df_min <- df_min %>% mutate(prediction = 1*(prediction > .5)+0)
+df_min <- df_min %>% mutate(accuracy = 1*(prediction == target_5yrs))
+sum(df_min$accuracy)/nrow(df_min)
+```
+
+```{r}
+prob = predict(fit_min2, type = "response")
+test_roc = roc(df_min$target_5yrs ~ prob, plot = TRUE, print.auc = TRUE)
+```
+
+```{r}
+fit_min3 <- glm(target_5yrs ~ GP + MIN + log(.01 + X3P.) + FT. + FG.+ log(.01 + BLK), family="binomial", data=df_min)
+summary(fit_min3)
+```
+
+```{r}
+df_min$prediction <- predict(fit_min3, df_min, type="response")
+df_min <- df_min %>% mutate(prediction = 1*(prediction > .5)+0)
+df_min <- df_min %>% mutate(accuracy = 1*(prediction == target_5yrs))
+sum(df_min$accuracy)/nrow(df_min)
+```
+
+```{r}
+prob = predict(fit_min3, type = "response")
+test_roc = roc(df_min$target_5yrs ~ prob, plot = TRUE, print.auc = TRUE)
+```
+```{r}
+Y = df_min$target_5yrs
+X = df_min$GP
+plot(df_min$GP,residuals(fit_min3),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min3)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min3)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min3)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+
+```{r}
+X = df_min$MIN
+plot(df_min$MIN,residuals(fit_min3),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min3)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min3)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min3)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_min$X3P.
+plot(df_min$X3P.,residuals(fit_min3),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min3)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min3)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min3)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_min$FT.
+plot(df_min$FT.,residuals(fit_min3),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min3)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min3)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min3)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+```{r}
+X = df_min$FG.
+plot(df_min$FG.,residuals(fit_min3),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min3)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min3)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min3)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+
+```{r}
+X = df_min$BLK
+plot(df_min$BLK,residuals(fit_min3),col=c("blue","red")[1+Y])
+lines(lowess(X,residuals(fit_min3)),col="black",lwd=2)
+lines(lowess(X[Y==0],residuals(fit_min3)[Y==0]),col="blue")
+lines(lowess(X[Y==1],residuals(fit_min3)[Y==1]),col="red")
+abline(h=0,lty=2,col="grey")
+```
+
+```{r}
+fit_min4 <- glm(target_5yrs ~ GP + MIN + I(FG.*FG.) + log(X3P.+.001) + AST + log(1+BLK) + REB + I(FT.*FT.), family="binomial", data=df_min)
+summary(fit_min4)
+```
+
+```{r}
+df_min$prediction <- predict(fit_min4, df_min, type="response")
+df_min <- df_min %>% mutate(prediction = 1*(prediction > .5)+0)
+df_min <- df_min %>% mutate(accuracy = 1*(prediction == target_5yrs))
+sum(df_min$accuracy)/nrow(df_min)
+```
+
+```{r}
+prob = predict(fit_min4, type = "response")
+test_roc = roc(df_min$target_5yrs ~ prob, plot = TRUE, print.auc = TRUE)
+```
+```{r}
+confusionMatrix(data = as.factor(df_min$prediction), reference = as.factor(df_min$target_5yrs))
+```
+
+
+```{r}
+cor <- round(cov2cor(vcov(fit_min4)), 2)
+cor
+```
