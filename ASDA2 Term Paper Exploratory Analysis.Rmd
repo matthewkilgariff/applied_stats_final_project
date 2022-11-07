@@ -1,0 +1,82 @@
+---
+title: "ASDA2 Term Paper"
+author: "Matthew Sullivan"
+date: "4/25/2022"
+output: pdf_document
+---
+
+Load dataset.
+```{r}
+df <- read.csv("/Users/matthewsullivan/Desktop/nba-players.csv",header=TRUE)
+head(df)
+names(df)
+```
+X = index
+name = name of NBA rookie
+gp = games played
+min = minutes played
+pts = points per game
+fgm = field goals made
+fga = field goal attempts
+fg = field goal percentage
+X3p_made = 3 points made
+X3pa = 3 point attempts
+X3p = 3 point percentage
+ftm = free throw made
+fta = free throw attempts
+ft = free throw percentage
+oreb = offensive rebounds
+dreb = defensive rebounds
+reb = rebounds
+ast = assists
+stl = steals
+blk = blocks
+tov = turnovers
+target_5yrs = Career Duration 5 years or longer?
+
+All figures are per-game averages.
+More data can be found at https://www.nba.com/stats/players/traditional/?SeasonType=Regular%20Season&sort=PTS&dir=-1&Season=2021-22&PlayerExperience=Rookie
+
+```{r}
+summary(df)
+colSums(is.na(df) | df == "") #No NAs in data.
+target_perc = sum(df$target_5yrs)/length(df$target_5yrs)
+target_perc #62% of rookies have a career that lasts 5 years or longer, nice!
+```
+
+```{r}
+#plot(df$X,df$gp)
+#plot(df$X,df$min)
+#plot(df$X,df$pts)
+#plot(df$X,df$fg)
+#plot(df$X,df$X3p)
+#plot(df$X,df$ft)
+#plot(df$X,df$oreb)
+#plot(df$X,df$dreb)
+#plot(df$X,df$ast)
+#plot(df$X,df$stl)
+#plot(df$X,df$blk)
+#plot(df$X,df$tov)
+```
+No variables show any need to explore potential outliers.
+
+```{r}
+#install.packages("corrplot")
+library(corrplot)
+df_corrplot <- df[, -which(names(df) %in% c("X", "name", "target_5yrs"))]
+M = cor(df_corrplot)
+corrplot(M,diag = FALSE)
+```
+We see noteworthy correlation between a few variables --
+A) Minutes played has a strong positive relationship with many variables, of which Field Goals and Free Throws stand out. This is different from Games playes, which has a lower positive correlation across variables, indicating that Minutes played has a stronger relationship to higher performance.
+B) Similar variables (e.g. Free Throws Made and Free Throw attempts) naturally share strong positive relationships. Note that percentage statistics (e.g. free throw percentage) have little correlation to other variables, whereas their counterpart points made and attempts do.
+C) Defensive statistics (e.g. offensive rebounds, blocks) share slight negative relationships with 3-point statistics. Also, 3 point statistics share a slight negative relationship with Field Goals. Perhaps there's a variable missing -- position -- which might help to explain difference in performance among players.
+
+```{r}
+plot(df$fgm,df$X3p_made)
+plot(df$fgm,df$ftm)
+plot(df$ftm,df$X3p_made)
+plot(df$fgm,df$oreb)
+plot(df$fgm,df$dreb)
+```
+

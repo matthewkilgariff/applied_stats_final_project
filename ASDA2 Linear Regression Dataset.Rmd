@@ -1,0 +1,142 @@
+---
+title: "ASDA2 Model Creation"
+output: html_notebook
+---
+
+```{r}
+df <- read.csv("nba-players.csv", header=TRUE)
+```
+
+
+
+Making our own dataset from original datasets.
+
+```{r}
+rooks <- read.csv("NBA Rookies by Year.csv", header=TRUE)
+names(rooks)[1] <- "rPlayer"
+player_years <- read.csv("NBA Players by State.csv", header=TRUE)
+names(player_years)[1] <- "pPlayer"
+player_years <- player_years[, c("pPlayer", "Yrs", "G")]
+```
+
+```{r}
+library(sqldf)
+```
+
+```{r}
+as.double.factor <- function(x) {as.numeric(levels(x))[x]}
+```
+
+```{r}
+new_df = na.omit(sqldf("
+  SELECT *
+  FROM rooks r
+    JOIN player_years p ON r.rPlayer = p.pPlayer
+"))
+new_df$Yrs <- as.numeric(as.character(new_df$Yrs))
+new_df$G <- as.numeric(as.character(new_df$G))
+new_df$X3P. <- as.double.factor(new_df$X3P.)
+new_df[is.na(new_df)] <- 0
+```
+
+```{r}
+write.csv(df,"rookies.csv", row.names = FALSE)
+```
+
+
+```{r}
+head(new_df)
+```
+
+```{r}
+hist(new_df$Year.Drafted)
+```
+
+```{r}
+hist(new_df$Yrs)
+```
+
+```{r}
+plot(new_df$Year.Drafted, new_df$Yrs)
+```
+
+```{r}
+summary(new_df$Yrs)
+```
+
+What happens if we get rid of the most recent players - they are somewhat skewing the data because a player in 2015, for example, can only have a max Yrs of 2!
+We will get omit the rookies from the last 5 yrs now and see what we have.
+```{r}
+old_players <- new_df[new_df$Year.Drafted < 2001, ]
+```
+
+```{r}
+summary(old_players$Yrs)
+```
+Our average Yrs has went up in this new dataset.
+
+```{r}
+max(new_df[new_df$Year.Drafted == 2012, ]$Yrs)
+```
+The highest possible years for someone drafted in 2012 is 5 years (this dataset was made in 2016).
+Maybe we should make a cutoff at 5 years and do ordinal.
+
+```{r}
+target_yrs <- old_players$Yrs
+plot(target_yrs)
+```
+
+```{r}
+target_yrs[target_yrs > 5] <- 5
+plot(target_yrs)
+old_players$target_yrs <- target_yrs
+```
+```{r}
+old_players
+```
+
+
+Test train split
+```{r}
+smp_size <- floor(0.75 * nrow(old_players))
+
+set.seed(614)
+train_ind <- sample(seq_len(nrow(old_players)), size = smp_size)
+
+train <- old_players[train_ind, ]
+test <- old_players[-train_ind, ]
+
+all_old <- subset(old_players, select = -c(`rPlayer`, `pPlayer`, `target_yrs`, `G`, `Year.Drafted`))
+test <- subset(test, select = -c(`rPlayer`, `pPlayer`, `target_yrs`, `G`, `Year.Drafted`))
+train <- subset(train, select = -c(`rPlayer`, `pPlayer`, `target_yrs`, `G`, `Year.Drafted`))
+```
+
+
+
+```{r}
+fit <- lm(Yrs ~ . , data=train)
+summary(fit)
+```
+
+MSE for test data
+```{r}
+preds <- predict(fit, newdata=test)
+mean((test$Yrs - preds)^2)
+```
+
+```{r}
+plot(test$Yrs, preds)
+abline(0,1)
+```
+
+```{r}
+plot(fitted(fit), resid(fit))
+abline(0,0, col="red")
+```
+
+
+
+
+
+
+
